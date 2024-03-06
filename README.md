@@ -15,4 +15,4 @@ __The problems to manager memory in C are:__
     - It's not predicted
     - And has a silent error, when not refresh in large data structure
     - The tail latency it's more in languages that using garbaget collector
-
+- Another problem with run a program whithoud free memory and alocate could be some time overzise one type (like int32)
