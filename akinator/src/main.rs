@@ -1,19 +1,20 @@
-use std::io;
+use std::io::{self, Write};
 use std::str::FromStr;
 
 use rand::Rng;
 
 fn main() {
-    let number = rand::thread_rng().gen_range(1..=100);
+    let number: i8 = rand::thread_rng().gen_range(1..=100);
 
     loop {
-        println!("Try to hit my number: ");
+        print!("Try to hit my number from 1 at 100: ");
+        let _ = std::io::stdout().flush();
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
         let input = input.trim();
 
-        let attempt: Result<i32, _> = i32::from_str(input);
+        let attempt: Result<i8, _> = i8::from_str(input);
 
         match attempt {
             Ok(attempt) => match attempt.cmp(&number) {
@@ -21,10 +22,10 @@ fn main() {
                     println!("\nYou're a genius!");
                     break;
                 }
-                std::cmp::Ordering::Less => println!("My number is bigger... try again!"),
-                std::cmp::Ordering::Greater => println!("My number is smaller... try again!"),
+                std::cmp::Ordering::Less => println!("My number is bigger... try again!\n"),
+                std::cmp::Ordering::Greater => println!("My number is smaller... try again!\n"),
             },
-            Err(..) => println!("Is {} a number?", input),
+            Err(..) => println!("Is {} a valid number?", input),
         }
     }
 }
