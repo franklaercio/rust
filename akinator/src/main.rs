@@ -4,7 +4,7 @@ use std::str::FromStr;
 use rand::Rng;
 
 fn main() {
-    let number = rand::thread_rng().gen_range(1..100);
+    let number = rand::thread_rng().gen_range(1..=100);
 
     loop {
         println!("Try to hit my number: ");
