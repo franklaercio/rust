@@ -1,39 +1,34 @@
-use hyper::{Body, Request, Response, Server};
-use hyper::service::{make_service_fn, service_fn};
-use std::convert::Infallible;
-use std::net::SocketAddr;
-
-async fn handle_request(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    match (req.method(), req.uri().path()) {
-        (&hyper::Method::GET, "/") => {
-            Ok(Response::new(Body::from("Hello from GET!")))
-        }
-        (&hyper::Method::POST, "/") => {
-            Ok(Response::new(Body::from("Hello from POST!")))
-        }
-        _ => {
-            let response = Response::builder()
-                .status(404)
-                .body(Body::from("Not found"))
-                .unwrap();
-            Ok(response)
-        }
-    }
-}
+use axum::{
+    routing::{get, post},
+    http::StatusCode,
+    Json, Router,
+};
+use serde_json::{json, Value};
 
 #[tokio::main]
 async fn main() {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let app = Router::new()
+        .route("/", get(handler_get))
+        .route("/", post(handler_post));
 
-    let make_svc = make_service_fn(|_conn| async {
-        Ok::<_, Infallible>(service_fn(handle_request))
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    println!("Server starting at http://{:?}", listener.local_addr().unwrap());
+
+    axum::serve(listener, app).await.unwrap();
+}
+
+async fn handler_get() -> (StatusCode, Json<Value>) {
+    let response = json!({
+        "greetings": "Hello from GET!"
     });
 
-    let server = Server::bind(&addr).serve(make_svc);
+    (StatusCode::OK, Json(response))
+}
 
-    println!("Starting server on http://{}", addr);
+async fn handler_post() -> (StatusCode, Json<Value>) {
+    let response = json!({
+        "greetings": "Hello from POST!"
+    });
 
-    if let Err(e) = server.await {
-        eprintln!("Can not possible start server: {}", e);
-    }
+    (StatusCode::OK, Json(response))
 }
