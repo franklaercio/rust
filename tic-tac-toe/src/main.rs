@@ -99,21 +99,21 @@ fn read_move(board: &mut Vec<Vec<char>>, player: i32) {
     stdout().flush().unwrap();
     io::stdin().read_line(&mut input).unwrap();
 
-    // if input.trim().is_empty() || input.trim().len() > 1 || !input.trim().parse::<f64>().is_ok() {
-    //     println!("Invalid input {}!", input.trim());
-    //     read_move(board, player);
-    // }
+    if input.trim().is_empty() || input.trim().len() > 1 || !input.trim().parse::<f64>().is_ok() {
+        println!("Invalid move!");
+        return read_move(board, player);
+    }
 
     let place = input.trim().parse::<i32>().unwrap();
 
     match read_place(place) {
         Err(_) => {
             println!("Invalid move {}!", place);
-            read_move(board, player);
+            return read_move(board, player);
         }
         Ok([row, col]) if board[row][col] != ' ' => {
             println!("Cell {} is already taken!", place);
-            read_move(board, player);
+            return read_move(board, player);
         }
         _ => {
             let [row, col] = read_place(place).unwrap();
