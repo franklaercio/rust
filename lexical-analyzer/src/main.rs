@@ -1,5 +1,5 @@
-use std::{io, usize};
 use std::io::{stdout, Write};
+use std::{io, usize};
 
 #[derive(Debug)]
 struct Analyzer {
@@ -24,70 +24,48 @@ impl Analyzer {
     fn next(&mut self) -> (bool, usize, String) {
         let mut number = String::new();
 
-        loop {
-            match self.content.chars().nth(self.position) {
-                None => return (true, self.position, String::new()),
-                Some(c) => {
-                    self.position += 1;
+        match self.content.chars().nth(self.position) {
+            None => (true, self.position, String::new()),
+            Some(c) => {
+                self.position += 1;
 
-                    match c {
-                        '-' | '+' => return (true, self.position, c.to_string()),
-                        '0'..='9' => {
-                            number.push(c);
-                            loop {
-                                match self.content.chars().nth(self.position) {
-                                    None => {
-                                        return (
-                                            true,
-                                            self.position,
-                                            number,
-                                        );
+                match c {
+                    '-' | '+' => (true, self.position, c.to_string()),
+                    '0'..='9' => {
+                        number.push(c);
+                        loop {
+                            match self.content.chars().nth(self.position) {
+                                None => return (true, self.position, number),
+                                Some(c) => match c {
+                                    '-' | '+' => {
+                                        return (true, self.position, number);
                                     }
-                                    Some(c) => {
-                                        match c {
-                                            '-' | '+' => {
-                                                return (
-                                                    true,
-                                                    self.position,
-                                                    number,
-                                                );
-                                            }
-                                            '0'..='9' => {
-                                                self.position += 1;
-                                                number.push(c);
-                                                continue;
-                                            }
-                                            ' ' => {
-                                                return (
-                                                    true,
-                                                    self.position,
-                                                    number,
-                                                );
-                                            }
-                                            _ => {
-                                                return (
-                                                    true,
-                                                    self.position,
-                                                    number,
-                                                );
-                                            }
-                                        }
+                                    '0'..='9' => {
+                                        self.position += 1;
+                                        number.push(c);
+                                        continue;
                                     }
-                                }
+                                    ' ' => {
+                                        return (true, self.position, number);
+                                    }
+                                    _ => {
+                                        return (true, self.position, number);
+                                    }
+                                },
                             }
                         }
-                        ' ' => return (true, self.position, c.to_string()),
-                        _ => return (false, self.position, c.to_string()),
                     }
+                    ' ' => (true, self.position, c.to_string()),
+                    _ => (false, self.position, c.to_string()),
                 }
             }
         }
     }
 
     // The back method is not implemented yet
-    fn back(&mut self, pos: usize, s: String) {
-        todo!()
-    }
+    // fn back(&mut self, pos: usize, s: String) {
+    //    todo!()
+    // }
 }
 
 // The main function is the entry point of the program
@@ -139,37 +117,90 @@ mod analyzer {
     use crate::analyzer;
 
     #[test]
-    fn test_expression() {
-        assert_eq!(analyzer("450 + 20"), vec![("450".to_string(), 0), ("+".to_string(), 4), ("20".to_string(), 6)]);
+    fn test_basic_expression() {
+        assert_eq!(
+            analyzer("450 + 20"),
+            vec![
+                ("450".to_string(), 0),
+                ("+".to_string(), 4),
+                ("20".to_string(), 6)
+            ]
+        );
     }
 
     #[test]
-    fn test_expression_with_spaces() {
-        assert_eq!(analyzer("450     +     20"), vec![("450".to_string(), 0), ("+".to_string(), 8), ("20".to_string(), 14)]);
+    fn test_expression_spaces() {
+        assert_eq!(
+            analyzer("450     +     20"),
+            vec![
+                ("450".to_string(), 0),
+                ("+".to_string(), 8),
+                ("20".to_string(), 14)
+            ]
+        );
     }
 
     #[test]
     fn test_expression_with_no_spaces() {
-        assert_eq!(analyzer("450+20"), vec![("450".to_string(), 0), ("+".to_string(), 3), ("20".to_string(), 4)]);
+        assert_eq!(
+            analyzer("450+20"),
+            vec![
+                ("450".to_string(), 0),
+                ("+".to_string(), 3),
+                ("20".to_string(), 4)
+            ]
+        );
     }
 
     #[test]
     fn test_expression_with_zeros() {
-        assert_eq!(analyzer("0+-0"), vec![("0".to_string(), 0), ("+".to_string(), 1), ("-".to_string(), 2), ("0".to_string(), 3)]);
+        assert_eq!(
+            analyzer("0+-0"),
+            vec![
+                ("0".to_string(), 0),
+                ("+".to_string(), 1),
+                ("-".to_string(), 2),
+                ("0".to_string(), 3)
+            ]
+        );
     }
 
     #[test]
     fn test_expression_with_multiple_operators() {
-        assert_eq!(analyzer("0 +++"), vec![("0".to_string(), 0), ("+".to_string(), 2), ("+".to_string(), 3), ("+".to_string(), 4)]);
+        assert_eq!(
+            analyzer("0 +++"),
+            vec![
+                ("0".to_string(), 0),
+                ("+".to_string(), 2),
+                ("+".to_string(), 3),
+                ("+".to_string(), 4)
+            ]
+        );
     }
 
     #[test]
-    fn test_expression_with_error() {
-        assert_eq!(analyzer("10+a"), vec![("10".to_string(), 0), ("+".to_string(), 2), ("Error in position".to_string(), 3)]);
+    fn test_expression_with_after_binary_operator() {
+        assert_eq!(
+            analyzer("10+a"),
+            vec![
+                ("10".to_string(), 0),
+                ("+".to_string(), 2),
+                ("Error in position".to_string(), 3)
+            ]
+        );
     }
 
     #[test]
-    fn test_expression_with_error_at_end() {
-        assert_eq!(analyzer("10 + 20a"), vec![("10".to_string(), 0), ("+".to_string(), 3), ("20".to_string(), 5), ("Error in position".to_string(), 7)]);
+    fn test_expression_with_error_after_number() {
+        assert_eq!(
+            analyzer("10 + 20a"),
+            vec![
+                ("10".to_string(), 0),
+                ("+".to_string(), 3),
+                ("20".to_string(), 5),
+                ("Error in position".to_string(), 7)
+            ]
+        );
     }
 }
+
