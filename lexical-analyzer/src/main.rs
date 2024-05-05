@@ -1,10 +1,10 @@
-use std::io::{stdout, Write};
 use std::{io, usize};
+use std::io::{stdout, Write};
 
 #[derive(Debug)]
 struct Analyzer {
     content: String,
-    position: usize,
+    current_pos: usize,
 }
 
 // Implement methods for the Analyzer struct
@@ -13,7 +13,7 @@ impl Analyzer {
     fn new(enter: String) -> Self {
         Self {
             content: enter,
-            position: 0,
+            current_pos: 0,
         }
     }
 
@@ -24,48 +24,34 @@ impl Analyzer {
     fn next(&mut self) -> (bool, usize, String) {
         let mut number = String::new();
 
-        match self.content.chars().nth(self.position) {
-            None => (true, self.position, String::new()),
-            Some(c) => {
-                self.position += 1;
+        loop {
+            match self.content.chars().nth(self.current_pos) {
+                None => return (true, self.current_pos, String::new()),
+                Some(c) => {
+                    let start_pos = self.current_pos;
+                    self.current_pos += 1;
 
-                match c {
-                    '-' | '+' => (true, self.position, c.to_string()),
-                    '0'..='9' => {
-                        number.push(c);
-                        loop {
-                            match self.content.chars().nth(self.position) {
-                                None => return (true, self.position, number),
-                                Some(c) => match c {
-                                    '-' | '+' => {
-                                        return (true, self.position, number);
-                                    }
-                                    '0'..='9' => {
-                                        self.position += 1;
-                                        number.push(c);
-                                        continue;
-                                    }
-                                    ' ' => {
-                                        return (true, self.position, number);
-                                    }
-                                    _ => {
-                                        return (true, self.position, number);
-                                    }
-                                },
+                    match c {
+                        '-' | '+' => return (true, start_pos, c.to_string()),
+                        '0'..='9' => {
+                            number.push(c);
+                            while let Some(next_c) = self.content.chars().nth(self.current_pos) {
+                                if next_c.is_digit(10) {
+                                    self.current_pos += 1;
+                                    number.push(next_c);
+                                } else {
+                                    break;
+                                }
                             }
+                            return (true, start_pos, number);
                         }
+                        c if c.is_whitespace() => continue,
+                        _ => return (false, start_pos, c.to_string()),
                     }
-                    ' ' => (true, self.position, c.to_string()),
-                    _ => (false, self.position, c.to_string()),
                 }
             }
         }
     }
-
-    // The back method is not implemented yet
-    // fn back(&mut self, pos: usize, s: String) {
-    //    todo!()
-    // }
 }
 
 // The main function is the entry point of the program
@@ -75,11 +61,11 @@ fn main() {
     stdout().flush().unwrap();
     io::stdin().read_line(&mut input).unwrap();
 
-    let results = analyzer(&input.trim());
+    let tokens = analyzer(&input.trim());
 
     print!("Analyzer: ");
-    for (s, pos) in results {
-        print!("(\"{}\", {}) ", s, pos);
+    for (token, pos) in tokens {
+        print!("(\"{}\", {}) ", token, pos);
     }
 }
 
@@ -87,33 +73,25 @@ fn main() {
 // where each tuple contains a String and a usize.
 // The function analyzes the input and returns the results of the analysis.
 fn analyzer(input: &str) -> Vec<(String, usize)> {
-    let mut exp = Analyzer::new(String::from(input));
-    let mut results = vec![];
+    let mut analyzer = Analyzer::new(String::from(input));
+    let mut tokens = vec![];
 
     loop {
-        let actual_pos = exp.position;
-        let (is_exp, pos, s) = exp.next();
-
-        if s == " " {
-            continue;
-        }
-
-        if is_exp {
-            results.push((s, actual_pos));
+        let (valid, pos, token) = analyzer.next();
+        if valid && !token.is_empty() {
+            tokens.push((token, pos));
+        } else if !valid {
+            tokens.push(("Error in position".to_string(), pos));
         } else {
-            results.push(("Error in position".to_string(), actual_pos));
-        }
-
-        if exp.content.len() == pos || !is_exp {
-            break;
+            break
         }
     }
 
-    results
+    tokens
 }
 
 #[cfg(test)]
-mod analyzer {
+mod tests {
     use crate::analyzer;
 
     #[test]
@@ -123,7 +101,7 @@ mod analyzer {
             vec![
                 ("450".to_string(), 0),
                 ("+".to_string(), 4),
-                ("20".to_string(), 6)
+                ("20".to_string(), 6),
             ]
         );
     }
@@ -135,7 +113,7 @@ mod analyzer {
             vec![
                 ("450".to_string(), 0),
                 ("+".to_string(), 8),
-                ("20".to_string(), 14)
+                ("20".to_string(), 14),
             ]
         );
     }
@@ -147,7 +125,7 @@ mod analyzer {
             vec![
                 ("450".to_string(), 0),
                 ("+".to_string(), 3),
-                ("20".to_string(), 4)
+                ("20".to_string(), 4),
             ]
         );
     }
@@ -160,7 +138,7 @@ mod analyzer {
                 ("0".to_string(), 0),
                 ("+".to_string(), 1),
                 ("-".to_string(), 2),
-                ("0".to_string(), 3)
+                ("0".to_string(), 3),
             ]
         );
     }
@@ -173,7 +151,7 @@ mod analyzer {
                 ("0".to_string(), 0),
                 ("+".to_string(), 2),
                 ("+".to_string(), 3),
-                ("+".to_string(), 4)
+                ("+".to_string(), 4),
             ]
         );
     }
@@ -185,7 +163,7 @@ mod analyzer {
             vec![
                 ("10".to_string(), 0),
                 ("+".to_string(), 2),
-                ("Error in position".to_string(), 3)
+                ("Error in position".to_string(), 3),
             ]
         );
     }
@@ -198,7 +176,19 @@ mod analyzer {
                 ("10".to_string(), 0),
                 ("+".to_string(), 3),
                 ("20".to_string(), 5),
-                ("Error in position".to_string(), 7)
+                ("Error in position".to_string(), 7),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_expression_with_whitespaces() {
+        assert_eq!(
+            analyzer("10\n+\t20"),
+            vec![
+                ("10".to_string(), 0),
+                ("+".to_string(), 3),
+                ("20".to_string(), 5),
             ]
         );
     }
