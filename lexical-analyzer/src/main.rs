@@ -1,5 +1,5 @@
-use std::{io, usize};
 use std::io::{stdout, Write};
+use std::{io, usize};
 
 #[derive(Debug)]
 struct Analyzer {
@@ -83,7 +83,7 @@ fn analyzer(input: &str) -> Vec<(String, usize)> {
         } else if !valid {
             tokens.push(("Error in position".to_string(), pos));
         } else {
-            break
+            break;
         }
     }
 
@@ -193,4 +193,3 @@ mod tests {
         );
     }
 }
-
